@@ -64,7 +64,7 @@ module Twitter
     # <tt>:list_url_base</tt>::      the value for <tt>href</tt> attribute on list links. The <tt>@username/list</tt> (minus the <tt>@</tt>) will be appended at the end of this.
     # <tt>:suppress_lists</tt>::    disable auto-linking to lists
     # <tt>:suppress_no_follow</tt>::   Do not add <tt>rel="nofollow"</tt> to auto-linked items
-    # <tt>:target</tt>::   add <tt>target="window_name"</tt> to auto-linked items    
+    # <tt>:target</tt>::   add <tt>target="window_name"</tt> to auto-linked items
     def auto_link_usernames_or_lists(text, options = {}) # :yields: list_or_username
       options = options.dup
       options[:url_class] ||= DEFAULT_URL_CLASS
@@ -118,7 +118,7 @@ module Twitter
     # <tt>:hashtag_class</tt>:: class to add to hashtag <tt><a></tt> tags
     # <tt>:hashtag_url_base</tt>::      the value for <tt>href</tt> attribute. The hashtag text (minus the <tt>#</tt>) will be appended at the end of this.
     # <tt>:suppress_no_follow</tt>::   Do not add <tt>rel="nofollow"</tt> to auto-linked items
-    # <tt>:target</tt>::   add <tt>target="window_name"</tt> to auto-linked items    
+    # <tt>:target</tt>::   add <tt>target="window_name"</tt> to auto-linked items
     def auto_link_hashtags(text, options = {})  # :yields: hashtag_text
       options = options.dup
       options[:url_class] ||= DEFAULT_URL_CLASS
@@ -155,7 +155,68 @@ module Twitter
       end
     end
 
+    def auto_link_with_entities(string, entities, entity_options = {})
+      options = apply_default_options(entity_options)
+      text = string.to_char_a
+      extra_html = HTML_ATTR_NO_FOLLOW unless options[:suppress_no_follow]
+
+      all_entities = [];
+
+      entities.each do |key, entities|
+        all_entities.concat(entities.map{|ea| {:key => key, :entity => ea}})
+      end
+
+      all_entities.sort! do |a,b|
+        a[:entity]['indices'][0] <=> b[:entity]['indices'][0]
+      end
+
+      linkers_for = {
+        :urls => proc do |txt, url|
+          display_url = html_escape(url['display_url'] || url['url'])
+          expanded_url = html_escape(url['expanded_url'] || url['url'])
+          src_url = html_escape(url['url'])
+          %Q'<a href="#{src_url}" target="_blank"#{extra_html} data-expanded-url="#{expanded_url}" class="#{options[:url_class]}">#{display_url}</a>'
+        end,
+        :hashtags => proc do |txt, hashtag|
+          escaped = html_escape(hashtag['text'])
+          %Q'<a href="#{options[:hashtag_url_base]}#{escaped}" title="##{escaped}" class="#{options[:hashtag_class]}"#{extra_html}>##{escaped}</a>'
+        end,
+        :user_mentions => proc do |txt, user_mention|
+          screen_name = html_escape(user_mention['screen_name'])
+          %Q'<a class="#{options[:username_class]}" data-screen-name="#{screen_name}" href="http://twitter.com/#{screen_name}"#{extra_html}>#{screen_name}</a>'
+        end
+      }
+      linkers_for.merge!(options[:linkers] || {})
+
+      result = ""
+      index = 0
+      all_entities.each do |object|
+        entity = object[:entity]
+        start_index = entity['indices'][0]
+        end_index = entity['indices'][1]
+        result << text[index...start_index].join("")
+        linker = linkers_for[object[:key].to_sym] || proc{|txt, entity| txt}
+        argument = text[start_index...end_index].join("")
+        result << linker.call(argument, entity)
+        index = end_index
+      end
+      result << text[index..text.length].join("")
+      result
+    end
+
     private
+
+    def apply_default_options(hash = {})
+      options = hash.dup;
+      options[:url_class] = options[:url_class] || DEFAULT_URL_CLASS;
+      options[:list_class] = options[:list_class] || DEFAULT_LIST_CLASS;
+      options[:username_class] = options[:username_class] || DEFAULT_USERNAME_CLASS;
+      options[:username_url_base] = options[:username_url_base] || "http://twitter.com/";
+      options[:list_url_base] = options[:list_url_base] || "http://twitter.com/";
+      options[:hashtag_class] = options[:hashtag_class] || DEFAULT_HASHTAG_CLASS;
+      options[:hashtag_url_base] = options[:hashtag_url_base] || "http://twitter.com/search?q=%23";
+      options
+    end
 
     def target_tag(options)
       target_option = options[:target]

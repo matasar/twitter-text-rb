@@ -549,6 +549,24 @@ describe Twitter::Autolink do
     end
   end
 
+  describe "autolinking with entities" do
+    it "should autolink with entities" do
+      options = {:url_class => 'twitter-timeline-link', :hashtag_class => 'twitter-hashtag', :username_class => 'twitter-atreply', :hashtag_url_base => '#!/search?q=%23'}
+      tweet = "Hello @jack I am http://t.co/capital #jack";
+      entities = {
+        "places"=>[],
+        "urls"=>[{"expanded_url"=>"http://t.co/capital",
+        "url"=>"http://t.co/capital", "indices"=>[17, 36],
+        "display_url"=>"t.co/capital"}],
+#        "fake_entity"=>[{"garbage"=>12, "indices"=>[0, 3]}],
+        "hashtags"=>[{"text"=>"jack", "indices"=>[37, 42]}],
+        "user_mentions"=>[{"name"=>"Jack", "id_str"=>"3", "id"=>3, "indices"=>[6, 11], "screen_name"=>"jack"}]
+      }
+      result = 'Hello <a class="twitter-atreply" data-screen-name="jack" href="http://twitter.com/jack" rel="nofollow">jack</a> I am <a href="http://t.co/capital" target="_blank" rel="nofollow" data-expanded-url="http://t.co/capital" class="twitter-timeline-link">t.co/capital</a> <a href="#!/search?q=%23jack" title="#jack" class="twitter-hashtag" rel="nofollow">#jack</a>'
+      TestAutolink.new.auto_link_with_entities(tweet, entities, options).should == result
+    end
+  end
+
   describe "html_escape" do
     before do
       @linker = TestAutolink.new
