@@ -160,7 +160,7 @@ module Twitter
       text = string.to_char_a
       extra_html = HTML_ATTR_NO_FOLLOW unless options[:suppress_no_follow]
 
-      all_entities = [];
+      all_entities = []
 
       entities.each do |key, entities|
         all_entities.concat(entities.map{|ea| {:key => key, :entity => ea}})
@@ -207,14 +207,14 @@ module Twitter
     private
 
     def apply_default_options(hash = {})
-      options = hash.dup;
-      options[:url_class] = options[:url_class] || DEFAULT_URL_CLASS;
-      options[:list_class] = options[:list_class] || DEFAULT_LIST_CLASS;
-      options[:username_class] = options[:username_class] || DEFAULT_USERNAME_CLASS;
-      options[:username_url_base] = options[:username_url_base] || "http://twitter.com/";
-      options[:list_url_base] = options[:list_url_base] || "http://twitter.com/";
-      options[:hashtag_class] = options[:hashtag_class] || DEFAULT_HASHTAG_CLASS;
-      options[:hashtag_url_base] = options[:hashtag_url_base] || "http://twitter.com/search?q=%23";
+      options = hash.dup
+      options[:url_class] = options[:url_class] || DEFAULT_URL_CLASS
+      options[:list_class] = options[:list_class] || DEFAULT_LIST_CLASS
+      options[:username_class] = options[:username_class] || DEFAULT_USERNAME_CLASS
+      options[:username_url_base] = options[:username_url_base] || "http://twitter.com/"
+      options[:list_url_base] = options[:list_url_base] || "http://twitter.com/"
+      options[:hashtag_class] = options[:hashtag_class] || DEFAULT_HASHTAG_CLASS
+      options[:hashtag_url_base] = options[:hashtag_url_base] || "http://twitter.com/search?q=%23"
       options
     end
 
